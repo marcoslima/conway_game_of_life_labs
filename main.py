@@ -6,66 +6,56 @@ Mais de 3 vizinhos, morre
 Morta:
 3 vizinhos, vive
 """
-import copy
 import curses
-from time import sleep
-from random import randint
-width = 250
+
+import numpy as np
+
+width = 238
 height = 57
-inicial = [[randint(0, 1) for _ in range(width)] for _ in range(height)]
+inicial = np.random.randint(0, 2, size=(height, width))
 
 stdscr = curses.initscr()
 
 
 def show(screen):
-    stdscr.clear()
     mortovivo = ' ▉'
     for i, row in enumerate(screen):
         stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
+
     stdscr.refresh()
 
 
-def clamp(value, minv, maxv):
-    if value < minv:
-        return maxv
-    if value > maxv:
-        return minv
-    return value
-
-
-def count_vizinho(row, col, tela):
-    """
-        123
-        456
-        789
-    """
-    vizinhos = ((-1, -1), (-1, 0), (-1, 1),
-                (0, -1), (0, 1),
-                (1, -1), (1, 0), (1, 1)
-                )
-    count = 0
-    for off_y, off_x in vizinhos:
-        y = clamp(row + off_y, 0, height-1)
-        x = clamp(col + off_x, 0, width-1)
-        count += tela[y][x]
-    return count
-
-
 def tick(tela):
-    nova_tela = copy.deepcopy(tela)
-    for r, row in enumerate(tela):
-        for c, cell in enumerate(row):
-            vizinhos = count_vizinho(r, c, tela)
-            if cell == 0 and vizinhos == 3:
-                nova_tela[r][c] = 1
-            elif vizinhos not in [2, 3]:
-                nova_tela[r][c] = 0
-    return nova_tela
+    """
+    (roll axis=0), (roll axis=1)
+    1 2 3
+    4 5 6
+    7 8 9
+    -1, -1   -1, 0   -1, 1
+     0, -1    0, 0    0, 1
+     1, -1    1, 0    1, 1
+    """
+    r5 = tela.copy()
+    r1 = np.roll(r5, -1, axis=(0, 1))
+    r2 = np.roll(r5, -1, axis=0)
+    r3 = np.roll(np.roll(r5, -1, axis=0), 1, axis=1)
+    r4 = np.roll(r5, -1, axis=1)
+    r6 = np.roll(r5, 1, axis=1)
+    r7 = np.roll(np.roll(r5, 1, axis=0), -1, axis=1)
+    r8 = np.roll(r5, 1, axis=0)
+    r9 = np.roll(r5, 1, axis=(0, 1))
+    somas = r1 + r2 + r3 + r4 + r6 + r7 + r8 + r9
+    lives = somas == 2
+    treses = somas == 3
+    x = np.bitwise_and(r5, lives)  # Se já vivo, continua vivo
+    nova_tela = np.bitwise_or(treses, x).astype(int)  # Vivo ou não, vive
+    return nova_tela.copy()
 
 
 def main():
     try:
         tela = inicial
+        stdscr.clear()
         while True:
             show(tela)
             tela = tick(tela)
