@@ -7,35 +7,31 @@ Morta:
 3 vizinhos, vive
 """
 import copy
-import curses
 from random import randint
 
 from basic_conway import BasicConway
+from basic_conway_ui_adapter import UiConwayPort
+from curses_ui_conway import CursesUiConwayAdapter
 
 
-class PurePyConway(BasicConway):
+class PurePyConway(BasicConway, UiConwayPort):
     def __init__(self, width, height):
         super().__init__(width, height)
-        self.stdscr = curses.initscr()
-        self.screen = self._make_initial_state()
+        self.data = self._make_initial_state()
 
     def show(self):
-        self.stdscr.clear()
-        mortovivo = ' ▉'
-        for i, row in enumerate(self.screen):
-            self.stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
-        self.stdscr.refresh()
+        self.update_screen(self.data)
 
     def tick(self):
-        nova_tela = copy.deepcopy(self.screen)
-        for r, row in enumerate(self.screen):
+        nova_tela = copy.deepcopy(self.data)
+        for r, row in enumerate(self.data):
             for c, cell in enumerate(row):
-                vizinhos = self._count_vizinho(r, c, self.screen)
+                vizinhos = self._count_vizinho(r, c, self.data)
                 if cell == 0 and vizinhos == 3:
                     nova_tela[r][c] = 1
                 elif vizinhos not in [2, 3]:
                     nova_tela[r][c] = 0
-        self.screen = nova_tela
+        self.data = nova_tela
 
     def _make_initial_state(self):
         return [[randint(0, 1)
@@ -69,5 +65,7 @@ class PurePyConway(BasicConway):
 
 
 if __name__ == '__main__':
+    ui_adapter = CursesUiConwayAdapter()
     app = PurePyConway(238, 57)
+    app.set_ui_adapter(ui_adapter)
     app.run()
