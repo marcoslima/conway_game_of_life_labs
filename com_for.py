@@ -8,7 +8,7 @@ Morta:
 """
 import copy
 import curses
-from time import sleep
+from time import time
 from random import randint
 width = 250
 height = 57
@@ -64,13 +64,17 @@ def tick(tela):
 
 
 def main():
+    count = 0
+    start = time()
     try:
         tela = inicial
         while True:
             show(tela)
             tela = tick(tela)
+            count += 1
     except KeyboardInterrupt:
-        print('Done')
+        end = time()
+        print(f'tick+render: {count / (end-start):.04f} FPS')
 
 
 if __name__ == '__main__':
