@@ -69,5 +69,5 @@ class PurePyConway(BasicConway):
 
 
 if __name__ == '__main__':
-    app = PurePyConway(250, 57)
+    app = PurePyConway(238, 57)
     app.run()
