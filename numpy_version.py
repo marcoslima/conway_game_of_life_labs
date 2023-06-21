@@ -10,51 +10,36 @@ import curses
 
 import numpy as np
 
-width = 238
-height = 57
-inicial = None
-mortovivo = ' ▉'
-
-stdscr = curses.initscr()
+from basic_conway import BasicConway
 
 
-def randomize():
-    return np.random.randint(0, 2, size=(height, width))
+class NumpyConway(BasicConway):
+    def __init__(self, width, height):
+        super().__init__(width, height)
+        self.stdscr = curses.initscr()
+        self.screen = self._make_initial_state()
 
+    def show(self):
+        mortovivo = ' ▉'
+        for i, row in enumerate(self.screen):
+            self.stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
 
-def show(screen):
-    for i, row in enumerate(screen):
-        stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
+        self.stdscr.refresh()
 
-    stdscr.refresh()
+    def tick(self):
+        somas = np.array([np.roll(y, r2, axis=1)
+                          for y in np.array([np.roll(self.screen, r1, axis=0)
+                                             for r1 in [-1, 0, 1]])
+                          for r2 in [-1, 0, 1]]).sum(axis=0) - self.screen
 
+        self.screen = np.bitwise_or(somas == 3,
+                                    np.bitwise_and(self.screen,
+                                                   somas == 2)).astype(int)
 
-def tick(tela):
-    somas = np.array([np.roll(y, r2, axis=1)
-                      for y in np.array([np.roll(tela, r1, axis=0)
-                                         for r1 in [-1, 0, 1]])
-                      for r2 in [-1, 0, 1]]).sum(axis=0) - tela
-
-    return np.bitwise_or(somas == 3,
-                         np.bitwise_and(tela, somas == 2)).astype(int)
-
-
-def main():
-    try:
-        tela = randomize()
-        stdscr.clear()
-        stdscr.nodelay(True)
-        while True:
-            show(tela)
-            tela = tick(tela)
-            tecla = stdscr.getch()
-            if tecla != curses.ERR:
-                if tecla in [ord('q'), ord('Q')]:
-                    break
-                tela = randomize()
-    except KeyboardInterrupt:
-        print('Done')
+    def _make_initial_state(self):
+        return np.random.randint(0, 2, size=(self.height, self.width))
 
 
 if __name__ == '__main__':
-    main()
+    app = NumpyConway(238, 57)
+    app.run()

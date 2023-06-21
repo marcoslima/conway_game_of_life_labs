@@ -8,74 +8,66 @@ Morta:
 """
 import copy
 import curses
-from time import time
 from random import randint
-width = 250
-height = 57
-inicial = [[randint(0, 1) for _ in range(width)] for _ in range(height)]
 
-stdscr = curses.initscr()
+from basic_conway import BasicConway
 
 
-def show(screen):
-    stdscr.clear()
-    mortovivo = ' ▉'
-    for i, row in enumerate(screen):
-        stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
-    stdscr.refresh()
+class PurePyConway(BasicConway):
+    def __init__(self, width, height):
+        super().__init__(width, height)
+        self.stdscr = curses.initscr()
+        self.screen = self._make_initial_state()
 
+    def show(self):
+        self.stdscr.clear()
+        mortovivo = ' ▉'
+        for i, row in enumerate(self.screen):
+            self.stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
+        self.stdscr.refresh()
 
-def clamp(value, minv, maxv):
-    if value < minv:
-        return maxv
-    if value > maxv:
-        return minv
-    return value
+    def tick(self):
+        nova_tela = copy.deepcopy(self.screen)
+        for r, row in enumerate(self.screen):
+            for c, cell in enumerate(row):
+                vizinhos = self._count_vizinho(r, c, self.screen)
+                if cell == 0 and vizinhos == 3:
+                    nova_tela[r][c] = 1
+                elif vizinhos not in [2, 3]:
+                    nova_tela[r][c] = 0
+        self.screen = nova_tela
 
+    def _make_initial_state(self):
+        return [[randint(0, 1)
+                 for _ in range(self.width)]
+                for _ in range(self.height)]
 
-def count_vizinho(row, col, tela):
-    """
-        123
-        456
-        789
-    """
-    vizinhos = ((-1, -1), (-1, 0), (-1, 1),
-                (0, -1), (0, 1),
-                (1, -1), (1, 0), (1, 1)
-                )
-    count = 0
-    for off_y, off_x in vizinhos:
-        y = clamp(row + off_y, 0, height-1)
-        x = clamp(col + off_x, 0, width-1)
-        count += tela[y][x]
-    return count
+    @staticmethod
+    def _clamp(value, minv, maxv):
+        if value < minv:
+            return maxv
+        if value > maxv:
+            return minv
+        return value
 
-
-def tick(tela):
-    nova_tela = copy.deepcopy(tela)
-    for r, row in enumerate(tela):
-        for c, cell in enumerate(row):
-            vizinhos = count_vizinho(r, c, tela)
-            if cell == 0 and vizinhos == 3:
-                nova_tela[r][c] = 1
-            elif vizinhos not in [2, 3]:
-                nova_tela[r][c] = 0
-    return nova_tela
-
-
-def main():
-    count = 0
-    start = time()
-    try:
-        tela = inicial
-        while True:
-            show(tela)
-            tela = tick(tela)
-            count += 1
-    except KeyboardInterrupt:
-        end = time()
-        print(f'tick+render: {count / (end-start):.04f} FPS')
+    def _count_vizinho(self, row, col, tela):
+        """
+            123
+            456
+            789
+        """
+        vizinhos = ((-1, -1), (-1, 0), (-1, 1),
+                    (0, -1), (0, 1),
+                    (1, -1), (1, 0), (1, 1)
+                    )
+        count = 0
+        for off_y, off_x in vizinhos:
+            y = self._clamp(row + off_y, 0, self.height-1)
+            x = self._clamp(col + off_x, 0, self.width-1)
+            count += tela[y][x]
+        return count
 
 
 if __name__ == '__main__':
-    main()
+    app = PurePyConway(250, 57)
+    app.run()
