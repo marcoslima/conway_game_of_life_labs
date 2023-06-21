@@ -12,13 +12,17 @@ import numpy as np
 
 width = 238
 height = 57
-inicial = np.random.randint(0, 2, size=(height, width))
+inicial = None
+mortovivo = ' ▉'
 
 stdscr = curses.initscr()
 
 
+def randomize():
+    return np.random.randint(0, 2, size=(height, width))
+
+
 def show(screen):
-    mortovivo = ' ▉'
     for i, row in enumerate(screen):
         stdscr.addstr(i, 0, ''.join([mortovivo[x] for x in row]))
 
@@ -26,39 +30,28 @@ def show(screen):
 
 
 def tick(tela):
-    """
-    (roll axis=0), (roll axis=1)
-    1 2 3
-    4 5 6
-    7 8 9
-    -1, -1   -1, 0   -1, 1
-     0, -1    0, 0    0, 1
-     1, -1    1, 0    1, 1
-    """
-    r5 = tela.copy()
-    r1 = np.roll(r5, -1, axis=(0, 1))
-    r2 = np.roll(r5, -1, axis=0)
-    r3 = np.roll(np.roll(r5, -1, axis=0), 1, axis=1)
-    r4 = np.roll(r5, -1, axis=1)
-    r6 = np.roll(r5, 1, axis=1)
-    r7 = np.roll(np.roll(r5, 1, axis=0), -1, axis=1)
-    r8 = np.roll(r5, 1, axis=0)
-    r9 = np.roll(r5, 1, axis=(0, 1))
-    somas = r1 + r2 + r3 + r4 + r6 + r7 + r8 + r9
-    lives = somas == 2
-    treses = somas == 3
-    x = np.bitwise_and(r5, lives)  # Se já vivo, continua vivo
-    nova_tela = np.bitwise_or(treses, x).astype(int)  # Vivo ou não, vive
-    return nova_tela.copy()
+    somas = np.array([np.roll(y, r2, axis=1)
+                      for y in np.array([np.roll(tela, r1, axis=0)
+                                         for r1 in [-1, 0, 1]])
+                      for r2 in [-1, 0, 1]]).sum(axis=0) - tela
+
+    return np.bitwise_or(somas == 3,
+                         np.bitwise_and(tela, somas == 2)).astype(int)
 
 
 def main():
     try:
-        tela = inicial
+        tela = randomize()
         stdscr.clear()
+        stdscr.nodelay(True)
         while True:
             show(tela)
             tela = tick(tela)
+            tecla = stdscr.getch()
+            if tecla != curses.ERR:
+                if tecla in [ord('q'), ord('Q')]:
+                    break
+                tela = randomize()
     except KeyboardInterrupt:
         print('Done')
 
