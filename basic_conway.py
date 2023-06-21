@@ -23,7 +23,6 @@ class BasicConway(ABC):
         count = 0
         start = time()
         try:
-            self._make_initial_state()
             while True:
                 self.show()
                 self.tick()

@@ -30,10 +30,11 @@ class NumpyConway(BasicConway, UiConwayPort):
 
         self.data = np.bitwise_or(somas == 3,
                                   np.bitwise_and(self.data,
-                                                 somas == 2)).astype(int)
+                                                 somas == 2)).astype(np.uint8)
 
     def _make_initial_state(self):
-        return np.random.randint(0, 2, size=(self.height, self.width))
+        return np.random.randint(0, 2, size=(self.height, self.width),
+                                 dtype=np.uint8)
 
 
 if __name__ == '__main__':

@@ -1,34 +1,11 @@
-import numpy as np
 import cv2 as cv
+import numpy as np
 
-from basic_conway import BasicConway
+from numpy_version import NumpyConway
+from opencv_ui_adapter import OpencvUiConwayAdapter
 
 
-class OpencvConway(BasicConway):
-    def __init__(self, width, height):
-        super().__init__(width, height)
-        self.screen = self._make_initial_state()
-        self.window = 'Conway'
-        cv.namedWindow(self.window, cv.WINDOW_NORMAL)
-
-    def __del__(self):
-        cv.destroyAllWindows()
-
-    def show(self):
-        img = cv.threshold(self.screen, 0, 255, cv.THRESH_BINARY)[1]
-        cv.imshow(self.window, img)
-        cv.waitKey(1)
-
-    def tick(self):
-        somas = np.array([np.roll(y, r2, axis=1)
-                          for y in np.array([np.roll(self.screen, r1, axis=0)
-                                             for r1 in [-1, 0, 1]])
-                          for r2 in [-1, 0, 1]]).sum(axis=0) - self.screen
-
-        self.screen = np.bitwise_or(somas == 3,
-                                    np.bitwise_and(self.screen,
-                                                   somas == 2))
-
+class OpencvConway(NumpyConway):
     def _make_initial_state(self):
         """Return an opencv image with random noise"""
         img = np.zeros((self.height, self.width, 1), dtype=np.uint8)
@@ -36,5 +13,7 @@ class OpencvConway(BasicConway):
 
 
 if __name__ == '__main__':
-    app = OpencvConway(1920, 1080)
+    ui_adapter = OpencvUiConwayAdapter()
+    app = OpencvConway(1080, 1000)
+    app.set_ui_adapter(ui_adapter)
     app.run()
